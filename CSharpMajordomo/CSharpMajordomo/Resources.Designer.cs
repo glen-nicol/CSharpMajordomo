@@ -70,7 +70,7 @@ namespace CSharpMajordomo {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Type member &apos;{0}&apos; is not in the correct order within &apos;{1}&apos;.
+        ///   Looks up a localized string similar to Reorder members according to editorconfig specifications. Out of place: {0}.
         /// </summary>
         internal static string AnalyzerMessageFormat {
             get {

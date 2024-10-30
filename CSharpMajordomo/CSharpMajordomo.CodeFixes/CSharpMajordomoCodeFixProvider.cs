@@ -4,9 +4,12 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Rename;
 using Microsoft.CodeAnalysis.Text;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
@@ -19,6 +22,8 @@ namespace CSharpMajordomo
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(CSharpMajordomoCodeFixProvider)), Shared]
     public class CSharpMajordomoCodeFixProvider : CodeFixProvider
     {
+        private static ConcurrentDictionary<string, Comparer<MemberSyntaxReference>> CACHED_CONFIG = new();
+
         public sealed override ImmutableArray<string> FixableDiagnosticIds
         {
             get { return ImmutableArray.Create(CSharpMajordomoAnalyzer.DiagnosticId); }
@@ -34,57 +39,55 @@ namespace CSharpMajordomo
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
-            // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
-            var diagnostic = context.Diagnostics.First();
-            var diagnosticSpan = diagnostic.Location.SourceSpan;
+            foreach(var diagnostic in context.Diagnostics)
+            {
+                var diagnosticSpan = diagnostic.Location.SourceSpan;
+                if(!diagnostic.Properties.TryGetValue(CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY, out var configOrder))
+                {
+                    continue;
+                }
 
-            // Find the type declaration identified by the diagnostic.
-            var containingType = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
-            var relevantMember = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<MemberDeclarationSyntax>().First();
+                // Find the type declaration identified by the diagnostic.
+                var containingType = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
 
-            // Register a code action that will invoke the fix.
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    title: CodeFixResources.CodeFixTitle,
-                    createChangedDocument: c => ModeMemberAsync(context.Document, containingType, relevantMember, c),
-                    equivalenceKey: nameof(CodeFixResources.CodeFixTitle)),
-                diagnostic);
+                var sorter = CACHED_CONFIG.GetOrAdd(configOrder, configOrder => SyntaxSorters.ParseTokenPriority(configOrder).ToComparer());
+
+                // Register a code action that will invoke the fix.
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        title: CodeFixResources.CodeFixTitle,
+                        createChangedDocument: c => SortMembersAsync(context, containingType, sorter, c),
+                        equivalenceKey: nameof(CodeFixResources.CodeFixTitle)),
+                    diagnostic);
+            }
         }
 
-        private async Task<Document> ModeMemberAsync(Document document, TypeDeclarationSyntax typeDecl, MemberDeclarationSyntax memberDeclaration, CancellationToken cancellationToken)
+        private async Task<Document> SortMembersAsync(
+            CodeFixContext context,  
+            TypeDeclarationSyntax typeDecl,
+            Comparer<MemberSyntaxReference> sorter, 
+            CancellationToken cancellationToken)
         {
-            // Get the symbol representing the type to be renamed.
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
-            var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl, cancellationToken);
-
-            // Produce a new solution that has all references to that type renamed, including the declaration.
-            var originalSolution = document.Project.Solution;
-            var optionSet = originalSolution.Workspace.Options;
-
+            var document = context.Document;
 
             var editor = await DocumentEditor.CreateAsync(document, cancellationToken);
 
-            var index = typeDecl.Members.IndexOf(memberDeclaration);
-            var startingNode = typeDecl.Members[index];
-            var swapNode = typeDecl.Members[index - 1];
+            var nodes = typeDecl.Members.Select((m, i) => new MemberSyntaxReference(m, i)).ToList();
+            nodes.Sort(sorter);
 
-            var rewrittenType = InsertInSortedPosition(RemoveOffending(typeDecl), startingNode).NormalizeWhitespace();
+            var workspace = context.Document.Project.Solution.Workspace;
 
-            editor.ReplaceNode(typeDecl, rewrittenType);
+            var newTypeDecl = typeDecl.WithMembers(new SyntaxList<MemberDeclarationSyntax>(nodes.Select(m => m.Member)));
+            var formatted =
+                Formatter.Format(
+                    newTypeDecl,
+                    Formatter.Annotation,
+                    workspace,
+                    workspace.Options);
+            editor.ReplaceNode(typeDecl, formatted);
 
             return editor.GetChangedDocument();
-
-            TypeDeclarationSyntax RemoveOffending(TypeDeclarationSyntax td)
-            {
-                var node = td.Members[index];
-                return td.RemoveNode(node, SyntaxRemoveOptions.KeepNoTrivia);
-            }
-
-            TypeDeclarationSyntax InsertInSortedPosition(TypeDeclarationSyntax td, MemberDeclarationSyntax toInsert)
-            {
-                var node = td.Members[index - 1];
-                return td.InsertNodesBefore(node, new[] { toInsert.WithTrailingTrivia(SyntaxFactory.EndOfLine(string.Empty)) });
-            }
+            //return await Formatter.FormatAsync(editor.GetChangedDocument(), cancellationToken: context.CancellationToken);
         }
     }
 }

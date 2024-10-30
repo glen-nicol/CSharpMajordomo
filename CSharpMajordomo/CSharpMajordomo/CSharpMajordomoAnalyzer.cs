@@ -1,4 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System;
 using System.Collections.Concurrent;
@@ -12,7 +14,7 @@ namespace CSharpMajordomo
     public class CSharpMajordomoAnalyzer : DiagnosticAnalyzer
     {
         public const string DiagnosticId = "CSharpMajordomo";
-        private static ConcurrentDictionary<string, List<Accessibility>> CACHED_CONFIG = new();
+        private static ConcurrentDictionary<string, Comparer<MemberSyntaxReference>> CACHED_CONFIG = new();
 
         // You can change these strings in the Resources.resx file. If you do not want your analyzer to be localize-able, you can use regular strings for Title and MessageFormat.
         // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Localizing%20Analyzers.md for more on localization
@@ -21,7 +23,7 @@ namespace CSharpMajordomo
         private static readonly LocalizableString Description = new LocalizableResourceString(nameof(Resources.AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
         private const string Category = "Style";
 
-        private const string ACCESSIBILITY_ORDERING_CONFIG_KEY = "CSharpMajordomo.accessibility_ordering";
+        public const string SORT_ORDERING_CONFIG_KEY = "CSharpMajordomo.sort_order";
 
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
 
@@ -32,96 +34,80 @@ namespace CSharpMajordomo
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
 
-            context.RegisterSymbolAction(c => AnalyzeSymbolAccessibility(c, c.Options.AnalyzerConfigOptionsProvider), SymbolKind.Field, SymbolKind.Property, SymbolKind.Method, SymbolKind.Event, SymbolKind.NamedType);
+            context.RegisterSyntaxNodeAction(
+                c => AnalyzeNode(c, c.Options.AnalyzerConfigOptionsProvider), 
+                SyntaxKind.ClassDeclaration, 
+                SyntaxKind.StructDeclaration, 
+                SyntaxKind.InterfaceDeclaration, 
+                SyntaxKind.EventDeclaration, 
+                SyntaxKind.EventFieldDeclaration);
         }
 
-        private static void TemplateExample(SymbolAnalysisContext context)
+        private static void AnalyzeNode(SyntaxNodeAnalysisContext context, AnalyzerConfigOptionsProvider optionsProvider)
         {
-            // TODO: Replace the following code with your own analysis, generating Diagnostic objects for any issues you find
-            var namedTypeSymbol = (INamedTypeSymbol)context.Symbol;
-
-            // Find just those named type symbols with names containing lowercase letters.
-            if(namedTypeSymbol.Name.ToCharArray().Any(char.IsLower))
+            if(context.Node is not TypeDeclarationSyntax typeDecl)
             {
-                // For all such symbols, produce a diagnostic.
-                var diagnostic = Diagnostic.Create(Rule, namedTypeSymbol.Locations[0], namedTypeSymbol.Name, namedTypeSymbol.ContainingType);
-
-                context.ReportDiagnostic(diagnostic);
-            }
-        }
-
-        private static void AnalyzeSymbolAccessibility(SymbolAnalysisContext context, AnalyzerConfigOptionsProvider optionsProvider)
-        {
-            if(context.Symbol.ContainingType is null)
-            {
-                // only concerned about members of another type. NOTE: although could arrange multiple types in a file too
                 return;
             }
 
-            foreach(var l in context.Symbol.Locations)
+            var d = CheckForSortedMembers(typeDecl, optionsProvider);
+            if(d is not null)
             {
-                var options = optionsProvider.GetOptions(l.SourceTree);
-                if(!options.TryGetValue(ACCESSIBILITY_ORDERING_CONFIG_KEY, out var orderConfig))
-                {
-                    // if not configured, nothing to do.
-                    continue;
-                }
-
-                var accessibilities =
-                    CACHED_CONFIG.GetOrAdd(
-                        orderConfig,
-                        orderConfig =>
-                            orderConfig.Split(new[] { ",", ";", " " }, StringSplitOptions.RemoveEmptyEntries)
-                            .Select(s => Enum.TryParse<Accessibility>(s, ignoreCase: true, out var a) ? (Accessibility?)a : null)
-                            .Where(a => a.HasValue)
-                            .Select(a => a.Value)
-                            .ToList());
-
-                if(accessibilities.Count == 0)
-                {
-                    continue;
-                }
-
-                var blockAccessibility = context.Symbol.DeclaredAccessibility;
-                var accessibilityIndex = accessibilities.IndexOf(blockAccessibility);
-                if(accessibilityIndex == -1)
-                {
-                    // accessibility is not part of the configuration so we assume user doesn't care where it goes.
-                    continue;
-                }
-
-                var symbolsAtSameLevel = context.Symbol.ContainingType.GetMembers().ToList();
-                var symbolMemberIndex = symbolsAtSameLevel.IndexOf(context.Symbol);
-                if(symbolMemberIndex > 0)
-                {
-                    var previousAccessIndex = PreviousMemberAccessibilityIndex(symbolMemberIndex);
-                    if(previousAccessIndex > accessibilityIndex)
-                    {
-                        // For all such symbols, produce a diagnostic.
-                        var diagnostic = Diagnostic.Create(Rule, l, context.Symbol.Name, context.Symbol.ContainingType);
-
-                        context.ReportDiagnostic(diagnostic);
-                    }
-                }
-
-                int PreviousMemberAccessibilityIndex(int index)
-                {
-                    if(index <= 0)
-                    {
-                        return -1;
-                    }
-
-                    var previousSymbol = symbolsAtSameLevel[symbolMemberIndex - 1];
-                    var previousAccessibility = previousSymbol.DeclaredAccessibility;
-                    var previousAccessIndex = accessibilities.IndexOf(previousAccessibility);
-                    if(previousAccessIndex >= 0)
-                    {
-                        return previousAccessIndex;
-                    }
-
-                    return PreviousMemberAccessibilityIndex(index - 1);
-                }
+                context.ReportDiagnostic(d);
             }
+        }
+
+
+        private static Diagnostic? CheckForSortedMembers(TypeDeclarationSyntax typeNode, AnalyzerConfigOptionsProvider optionsProvider)
+        {
+            if(typeNode.Members.Count == 0)
+            {
+                return null;
+            }
+
+            var options = optionsProvider.GetOptions(typeNode.SyntaxTree);
+            if(!options.TryGetValue(SORT_ORDERING_CONFIG_KEY, out var orderConfig))
+            {
+                // if not configured, nothing to do.
+                return null;
+            }
+
+            var sorter =
+                CACHED_CONFIG.GetOrAdd(
+                    orderConfig,
+                    orderConfig => SyntaxSorters.ParseTokenPriority(orderConfig).ToComparer());
+
+            //var model = context.Compilation.GetSemanticModel(l.SourceTree);
+            var currentMembers = typeNode.Members.Select((m, i) => new MemberSyntaxReference(m, i)).ToImmutableArray();
+
+            var sortedSymbols = currentMembers.Sort(sorter);
+
+            if(sortedSymbols.SequenceEqual(currentMembers))
+            {
+                // members are sorted correctly
+                return null;
+            }
+
+            var indexMap = sortedSymbols.Select((m, i) => (m, i)).ToDictionary(t => t.m, t => t.i);
+
+            var diffGroups =
+                currentMembers.Select((m, i) =>
+                {
+                    var sortedIndex = indexMap[m];
+                    return (m, diff: Math.Abs(i - sortedIndex));
+                })
+                .OrderByDescending(t => t.diff)
+                .ToList()
+                .GroupBy(t => t.diff)
+                .ToList();
+
+            // NOTE: this logic isn't awesome or 100% accurate
+            var outOfPlace = diffGroups.Take(diffGroups.Count - 1).SelectMany(g => g.Select(t => t.m));
+
+            var diagnosticProperties = ImmutableDictionary<string, string>.Empty.Add(SORT_ORDERING_CONFIG_KEY, orderConfig);
+
+            var expectedOrderString = string.Join(", ", outOfPlace.Select(s => s.Identifier));
+            return Diagnostic.Create(Rule, typeNode.IdentifierLocation() ?? typeNode.GetLocation(), diagnosticProperties, expectedOrderString);
         }
     }
 }

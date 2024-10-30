@@ -61,7 +61,7 @@ namespace CSharpMajordomo {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Move member.
+        ///   Looks up a localized string similar to Sort members.
         /// </summary>
         internal static string CodeFixTitle {
             get {
