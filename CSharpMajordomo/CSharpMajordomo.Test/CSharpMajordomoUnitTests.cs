@@ -280,5 +280,67 @@ namespace CSharpMajordomo.Test
             var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
             await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "field, static, readonly" }, test, expected, fixtest);
         }
+
+        [TestMethod]
+        public async Task Can_sort_by_member_identifier()
+        {
+            var test =
+                """
+                namespace NS;
+                
+                class {|#0:TypeName|}
+                {
+                    private static int _x2;
+                    private static int _x3;
+                    private static int _x1;
+                }
+                """;
+
+            var fixtest =
+                """
+                namespace NS;
+                
+                class TypeName
+                {
+                    private static int _x1;
+                    private static int _x2;
+                    private static int _x3;
+                }
+                """;
+
+            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "identifier" }, test, expected, fixtest);
+        }
+
+        [TestMethod]
+        public async Task Can_sort_by_member_identifier_descending()
+        {
+            var test =
+                """
+                namespace NS;
+                
+                class {|#0:TypeName|}
+                {
+                    private static int _x2;
+                    private static int _x3;
+                    private static int _x1;
+                }
+                """;
+
+            var fixtest =
+                """
+                namespace NS;
+                
+                class TypeName
+                {
+                    private static int _x3;
+                    private static int _x2;
+                    private static int _x1;
+                }
+                """;
+
+            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "-identifier" }, test, expected, fixtest);
+        }
     }
 }

@@ -41,44 +41,62 @@ public static class SyntaxSorters
             return v1;
         };
 
+    public static Comparison<T> Invert<T>(this Comparison<T> comparison)
+    => (lhs, rhs) =>
+    {
+        return comparison(rhs, lhs);
+    };
+
     public static Comparer<T> ToComparer<T>(this Comparison<T> comparison) => Comparer<T>.Create(comparison);
 
     public static Comparison<MemberSyntaxReference> ParseTokenPriority(string configuration)
     {
-        var parts = 
+        var comparisonLayers = 
             configuration.Split(new[] { ",", ";", " " }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(s =>
+            .Select(sortField =>
             {
-                var res = new char[s.Length];
+                var res = new char[sortField.Length];
 
-                var length = s.AsSpan().Trim().ToLowerInvariant(res);
+                var length = sortField.AsSpan().Trim().ToLowerInvariant(res);
                 var result = res.AsSpan().Slice(0, length);
+
+                var inverted = false;
+                if(result.Length == 0)
+                {
+                    return (sortField, null!);
+                }
+
+                if(result[0] == '-')
+                {
+                    inverted = true;
+                    result = result.Slice(1);
+                }
 
                 // netstandard regex doesn't support span. If we need more than just lower case ascii a regex is worth the allocation.
                 for(int i = 0; i < result.Length; i++)
                 {
                     if(result[i] < 'a' || result[i] > 'z')
                     {
-                        return null!;
+                        return (sortField, null!);
                     }
                 }
 
-                return result.ToString();
+                var comparison =
+                    result switch
+                    {
+                        "identifier" => Identifier,
+                        var o => CreateIndexOfComparison(o.ToString()),
+                    };
+
+                return (sortField, sorter: inverted ? comparison.Invert() : comparison);
             })
-            .Where(s => s is not null)
-            .ToList();
-        var sorter = DocumentOrder;
+            .Where(t => t.sorter is not null);
 
         // build the sorter from least important out by going in reverse direction
-        for(var i = parts.Count - 1; i >= 0; i--)
+        var sorter = DocumentOrder;
+        foreach(var t in new Stack<(string sortField, Comparison<MemberSyntaxReference> sorter)>(comparisonLayers))
         {
-            var next = parts[i] switch
-            {
-                "identifier" => Identifier,
-                _ => CreateIndexOfComparison(parts[i]),
-            };
-
-            sorter = next.ThenBy(sorter);
+            sorter = t.sorter.ThenBy(sorter);
         }
 
         return sorter;
