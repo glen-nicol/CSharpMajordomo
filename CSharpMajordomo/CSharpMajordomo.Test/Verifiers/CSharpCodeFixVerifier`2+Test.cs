@@ -1,7 +1,9 @@
 ﻿using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
+using Microsoft.CodeAnalysis.Testing;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CSharpMajordomo.Test
 {
@@ -9,9 +11,9 @@ namespace CSharpMajordomo.Test
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TCodeFix : CodeFixProvider, new()
     {
-        public class Test : CSharpCodeFixTest<TAnalyzer, TCodeFix, MSTestVerifier>
+        public class Test : CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>
         {
-            public Test()
+            public Test(Dictionary<string,string>? editorConfigValues = null)
             {
                 SolutionTransforms.Add((solution, projectId) =>
                 {
@@ -22,6 +24,12 @@ namespace CSharpMajordomo.Test
 
                     return solution;
                 });
+
+                if(editorConfigValues is not null)
+                {
+                    var lines = string.Join("\n", editorConfigValues.Select(kv => $"{kv.Key} = {kv.Value}"));
+                    TestState.AnalyzerConfigFiles.Add(("/.editorconfig", $"[*.cs]\n{lines}"));
+                }
             }
         }
     }

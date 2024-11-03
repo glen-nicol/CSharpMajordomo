@@ -23,7 +23,7 @@ namespace CSharpMajordomo
         private static readonly LocalizableString Description = new LocalizableResourceString(nameof(Resources.AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
         private const string Category = "Style";
 
-        public const string SORT_ORDERING_CONFIG_KEY = "CSharpMajordomo.sort_order";
+        public const string SORT_ORDERING_CONFIG_KEY = "CSharpMajordomo.member_sort_order";
 
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
 
@@ -37,7 +37,8 @@ namespace CSharpMajordomo
             context.RegisterSyntaxNodeAction(
                 c => AnalyzeNode(c, c.Options.AnalyzerConfigOptionsProvider), 
                 SyntaxKind.ClassDeclaration, 
-                SyntaxKind.StructDeclaration, 
+                SyntaxKind.RecordDeclaration,
+                SyntaxKind.StructDeclaration,
                 SyntaxKind.InterfaceDeclaration, 
                 SyntaxKind.EventDeclaration, 
                 SyntaxKind.EventFieldDeclaration);
@@ -88,26 +89,9 @@ namespace CSharpMajordomo
                 return null;
             }
 
-            var indexMap = sortedSymbols.Select((m, i) => (m, i)).ToDictionary(t => t.m, t => t.i);
+            var diagnosticProperties = ImmutableDictionary<string, string?>.Empty.Add(SORT_ORDERING_CONFIG_KEY, orderConfig);
 
-            var diffGroups =
-                currentMembers.Select((m, i) =>
-                {
-                    var sortedIndex = indexMap[m];
-                    return (m, diff: Math.Abs(i - sortedIndex));
-                })
-                .OrderByDescending(t => t.diff)
-                .ToList()
-                .GroupBy(t => t.diff)
-                .ToList();
-
-            // NOTE: this logic isn't awesome or 100% accurate
-            var outOfPlace = diffGroups.Take(diffGroups.Count - 1).SelectMany(g => g.Select(t => t.m));
-
-            var diagnosticProperties = ImmutableDictionary<string, string>.Empty.Add(SORT_ORDERING_CONFIG_KEY, orderConfig);
-
-            var expectedOrderString = string.Join(", ", outOfPlace.Select(s => s.Identifier));
-            return Diagnostic.Create(Rule, typeNode.IdentifierLocation() ?? typeNode.GetLocation(), diagnosticProperties, expectedOrderString);
+            return Diagnostic.Create(Rule, typeNode.IdentifierLocation() ?? typeNode.GetLocation(), diagnosticProperties);
         }
     }
 }

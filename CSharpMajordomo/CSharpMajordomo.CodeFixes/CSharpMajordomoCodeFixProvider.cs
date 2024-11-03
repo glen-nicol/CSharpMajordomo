@@ -38,17 +38,25 @@ namespace CSharpMajordomo
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+            if(root is null)
+            {
+                return;
+            }
 
             foreach(var diagnostic in context.Diagnostics)
             {
                 var diagnosticSpan = diagnostic.Location.SourceSpan;
-                if(!diagnostic.Properties.TryGetValue(CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY, out var configOrder))
+                if(!diagnostic.Properties.TryGetValue(CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY, out var configOrder) || configOrder is null || configOrder.Length == 0)
                 {
                     continue;
                 }
 
                 // Find the type declaration identified by the diagnostic.
-                var containingType = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
+                var containingType = root.FindToken(diagnosticSpan.Start).Parent?.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
+                if(containingType is null)
+                {
+                    continue;
+                }
 
                 var sorter = CACHED_CONFIG.GetOrAdd(configOrder, configOrder => SyntaxSorters.ParseTokenPriority(configOrder).ToComparer());
 

@@ -3,10 +3,17 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 public static class SyntaxSorters
 {
+    public static readonly Regex KEYWORD_PATTERN = new("^a-z+$");
+
     public static Comparison<MemberSyntaxReference> DocumentOrder { get; } = (l, r) => l.DocumentIndex.CompareTo(r.DocumentIndex);
+
+    public static Comparison<MemberSyntaxReference> Identifier { get; } = (l, r) => l.Identifier.CompareTo(r.Identifier);
 
     public static Comparison<MemberSyntaxReference> CreateIndexOfComparison(string searchFor)
         => (lhs, rhs) =>
@@ -38,13 +45,40 @@ public static class SyntaxSorters
 
     public static Comparison<MemberSyntaxReference> ParseTokenPriority(string configuration)
     {
-        var parts = configuration.Split(new[] { ",", ";", " " }, StringSplitOptions.RemoveEmptyEntries);
+        var parts = 
+            configuration.Split(new[] { ",", ";", " " }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s =>
+            {
+                var res = new char[s.Length];
+
+                var length = s.AsSpan().Trim().ToLowerInvariant(res);
+                var result = res.AsSpan().Slice(0, length);
+
+                // netstandard regex doesn't support span. If we need more than just lower case ascii a regex is worth the allocation.
+                for(int i = 0; i < result.Length; i++)
+                {
+                    if(result[i] < 'a' || result[i] > 'z')
+                    {
+                        return null!;
+                    }
+                }
+
+                return result.ToString();
+            })
+            .Where(s => s is not null)
+            .ToList();
         var sorter = DocumentOrder;
 
         // build the sorter from least important out by going in reverse direction
-        for(var i = parts.Length-1; i >= 0; i--)
+        for(var i = parts.Count - 1; i >= 0; i--)
         {
-            sorter = CreateIndexOfComparison(parts[i]).ThenBy(sorter);
+            var next = parts[i] switch
+            {
+                "identifier" => Identifier,
+                _ => CreateIndexOfComparison(parts[i]),
+            };
+
+            sorter = next.ThenBy(sorter);
         }
 
         return sorter;
@@ -52,41 +86,26 @@ public static class SyntaxSorters
 
     public static IEnumerable<string> ConvertToSearchableTokens(this MemberDeclarationSyntax syntaxNode)
     {
-        foreach(var m in syntaxNode.Modifiers)
-        {
-            yield return m.Text;
-        }
-
-        var kindString =
+        IEnumerable<string> kindStrings =
             syntaxNode.Kind() switch
             {
-                SyntaxKind.ClassKeyword
-                or SyntaxKind.ClassDeclaration => "class",
-                SyntaxKind.StructKeyword
-                or SyntaxKind.StructDeclaration => "struct",
-                SyntaxKind.EnumKeyword
-                or SyntaxKind.EnumDeclaration => "enum",
-                SyntaxKind.DelegateKeyword
-                or SyntaxKind.DelegateDeclaration => "delegate",
-                SyntaxKind.InterfaceKeyword
-                or SyntaxKind.InterfaceDeclaration => "interface",
-                SyntaxKind.FieldKeyword 
-                or SyntaxKind.FieldDeclaration => "field",
-                SyntaxKind.PropertyKeyword
-                or SyntaxKind.PropertyDeclaration => "property",
-                SyntaxKind.MethodKeyword
-                or SyntaxKind.MethodDeclaration => "method",
-                SyntaxKind.ConstructorDeclaration => "constructor",
-                SyntaxKind.DestructorDeclaration => "destructor",
-                SyntaxKind.EventKeyword
-                or SyntaxKind.EventDeclaration
-                or SyntaxKind.EventFieldDeclaration => "event",
-                _ => null,
+                SyntaxKind.ClassDeclaration => ["class"],
+                SyntaxKind.RecordDeclaration => ["class", "record"],
+                SyntaxKind.RecordStructDeclaration => ["struct", "record"],
+                SyntaxKind.StructDeclaration => ["struct"],
+                SyntaxKind.EnumDeclaration => ["enum"],
+                SyntaxKind.DelegateDeclaration => ["delegate"],
+                SyntaxKind.InterfaceDeclaration => ["interface"],
+                SyntaxKind.FieldDeclaration => ["field"],
+                SyntaxKind.PropertyDeclaration => ["property"],
+                SyntaxKind.MethodDeclaration => ["method"],
+                SyntaxKind.ConstructorDeclaration => ["constructor"],
+                SyntaxKind.DestructorDeclaration => ["destructor"],
+                SyntaxKind.EventDeclaration
+                or SyntaxKind.EventFieldDeclaration => ["event"],
+                _ => [],
             };
 
-        if(kindString is not null)
-        {
-            yield return kindString;
-        }
+        return syntaxNode.Modifiers.Select(t => t.Text).Concat(kindStrings);
     }
 }
