@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VerifyCS = CSharpMajordomo.Test.CSharpCodeFixVerifier<
-    CSharpMajordomo.CSharpMajordomoAnalyzer,
+    CSharpMajordomo.CsmdMemberSortingAnalyzer,
     CSharpMajordomo.CSharpMajordomoCodeFixProvider>;
 
 namespace CSharpMajordomo.Test
 {
     [TestClass]
-    public class CSharpMajordomoUnitTest
+    public class SortingAnalyzerTests
     {
         //No diagnostics expected to show up
         [TestMethod]
