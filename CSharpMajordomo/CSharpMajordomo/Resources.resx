@@ -133,18 +133,18 @@
     <value>Space out declarations of different types</value>
   </data>
   <data name="InterGroupSpacingDescription" xml:space="preserve">
-    <value>Space out declarations of different types.</value>
+    <value>Use proper spacing between members of the different types.</value>
   </data>
   <data name="InterGroupSpacingMessageFormat" xml:space="preserve">
     <value>Use {0} blank line(s) between different member types</value>
   </data>
   <data name="IntraGroupSpacingDescription" xml:space="preserve">
-    <value>Space out declarations of the same type.</value>
+    <value>Use proper spacing between members of the same type.</value>
   </data>
   <data name="IntraGroupSpacingMessageFormat" xml:space="preserve">
     <value>Use {0} blank line(s) between {1} members</value>
   </data>
   <data name="IntraGroupSpacingTitle" xml:space="preserve">
-    <value>Space out declarations of the same type</value>
+    <value>Space out members of the same type</value>
   </data>
 </root>

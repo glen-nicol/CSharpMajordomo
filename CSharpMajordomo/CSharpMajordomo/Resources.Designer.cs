@@ -88,7 +88,7 @@ namespace CSharpMajordomo {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Space out declarations of different types..
+        ///   Looks up a localized string similar to Use proper spacing between members of the different types..
         /// </summary>
         internal static string InterGroupSpacingDescription {
             get {
@@ -115,7 +115,7 @@ namespace CSharpMajordomo {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Space out declarations of the same type..
+        ///   Looks up a localized string similar to Use proper spacing between members of the same type..
         /// </summary>
         internal static string IntraGroupSpacingDescription {
             get {
@@ -133,7 +133,7 @@ namespace CSharpMajordomo {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Space out declarations of the same type.
+        ///   Looks up a localized string similar to Space out members of the same type.
         /// </summary>
         internal static string IntraGroupSpacingTitle {
             get {
