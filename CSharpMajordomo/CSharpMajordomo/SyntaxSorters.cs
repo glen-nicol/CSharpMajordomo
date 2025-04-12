@@ -102,27 +102,41 @@ public static class SyntaxSorters
         return sorter;
     }
 
+    public static IEnumerable<string> MemberTypeNames(this MemberDeclarationSyntax syntaxNode)
+    {
+        return syntaxNode.Kind() switch
+        {
+            SyntaxKind.ClassDeclaration => ["class"],
+            SyntaxKind.RecordDeclaration => ["class", "record"],
+            SyntaxKind.RecordStructDeclaration => ["struct", "record"],
+            SyntaxKind.StructDeclaration => ["struct"],
+            SyntaxKind.EnumDeclaration => ["enum"],
+            SyntaxKind.DelegateDeclaration => ["delegate"],
+            SyntaxKind.InterfaceDeclaration => ["interface"],
+            SyntaxKind.FieldDeclaration => ["field"],
+            SyntaxKind.PropertyDeclaration => ["property"],
+            SyntaxKind.MethodDeclaration => ["method"],
+            SyntaxKind.ConstructorDeclaration => ["constructor"],
+            SyntaxKind.DestructorDeclaration => ["destructor"],
+            SyntaxKind.IndexerDeclaration => ["indexer"],
+            SyntaxKind.OperatorDeclaration => ["operator"],
+            SyntaxKind.ConversionOperatorDeclaration => ["conversionoperator"],
+            SyntaxKind.EventDeclaration
+            or SyntaxKind.EventFieldDeclaration => ["event"],
+            _ => [],
+        };
+    }
+
     public static IEnumerable<string> ConvertToSearchableTokens(this MemberDeclarationSyntax syntaxNode)
     {
         IEnumerable<string> kindStrings =
-            syntaxNode.Kind() switch
-            {
-                SyntaxKind.ClassDeclaration => ["class"],
-                SyntaxKind.RecordDeclaration => ["class", "record"],
-                SyntaxKind.RecordStructDeclaration => ["struct", "record"],
-                SyntaxKind.StructDeclaration => ["struct"],
-                SyntaxKind.EnumDeclaration => ["enum"],
-                SyntaxKind.DelegateDeclaration => ["delegate"],
-                SyntaxKind.InterfaceDeclaration => ["interface"],
-                SyntaxKind.FieldDeclaration => ["field"],
-                SyntaxKind.PropertyDeclaration => ["property"],
-                SyntaxKind.MethodDeclaration => ["method"],
-                SyntaxKind.ConstructorDeclaration => ["constructor"],
-                SyntaxKind.DestructorDeclaration => ["destructor"],
-                SyntaxKind.EventDeclaration
-                or SyntaxKind.EventFieldDeclaration => ["event"],
-                _ => [],
-            };
+            syntaxNode.MemberTypeNames()
+            .Concat(
+                syntaxNode.Kind() switch
+                {
+                    SyntaxKind.ConversionOperatorDeclaration => ["operator", "conversion"],
+                    _ => [],
+                });
 
         return syntaxNode.Modifiers.Select(t => t.Text).Concat(kindStrings);
     }

@@ -70,7 +70,7 @@ namespace CSharpMajordomo {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Reorder members according to editorconfig specifications. Out of place: {0}.
+        ///   Looks up a localized string similar to Reorder members according to editorconfig specifications.
         /// </summary>
         internal static string AnalyzerMessageFormat {
             get {
@@ -84,6 +84,60 @@ namespace CSharpMajordomo {
         internal static string AnalyzerTitle {
             get {
                 return ResourceManager.GetString("AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Space out declarations of different types..
+        /// </summary>
+        internal static string InterGroupSpacingDescription {
+            get {
+                return ResourceManager.GetString("InterGroupSpacingDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use {0} blank line(s) between different member types.
+        /// </summary>
+        internal static string InterGroupSpacingMessageFormat {
+            get {
+                return ResourceManager.GetString("InterGroupSpacingMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Space out declarations of different types.
+        /// </summary>
+        internal static string InterGroupSpacingTitle {
+            get {
+                return ResourceManager.GetString("InterGroupSpacingTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Space out declarations of the same type..
+        /// </summary>
+        internal static string IntraGroupSpacingDescription {
+            get {
+                return ResourceManager.GetString("IntraGroupSpacingDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use {0} blank line(s) between {1} members.
+        /// </summary>
+        internal static string IntraGroupSpacingMessageFormat {
+            get {
+                return ResourceManager.GetString("IntraGroupSpacingMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Space out declarations of the same type.
+        /// </summary>
+        internal static string IntraGroupSpacingTitle {
+            get {
+                return ResourceManager.GetString("IntraGroupSpacingTitle", resourceCulture);
             }
         }
     }

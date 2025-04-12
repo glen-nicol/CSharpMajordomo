@@ -54,8 +54,8 @@ namespace CSharpMajordomo.Test
                 }
                 """;
 
-            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "public,private" }, test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic(Rules.MemberSorting.Rule).WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY] = "public,private" }, test, expected, fixtest);
         }
 
         [TestMethod]
@@ -122,8 +122,8 @@ namespace CSharpMajordomo.Test
                 }
                 """;
 
-            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "field, property, constructor, destructor, method, event, class, record, struct, delegate, enum, interface" }, test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic(Rules.MemberSorting.Rule).WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY] = "field, property, constructor, destructor, method, event, class, record, struct, delegate, enum, interface" }, test, expected, fixtest);
         }
 
         [TestMethod]
@@ -155,8 +155,8 @@ namespace CSharpMajordomo.Test
                 }
                 """;
 
-            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "field, property, public, private" }, test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic(Rules.MemberSorting.Rule).WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY] = "field, property, public, private" }, test, expected, fixtest);
         }
 
         [TestMethod]
@@ -186,8 +186,8 @@ namespace CSharpMajordomo.Test
                 }
                 """;
 
-            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "field, public, private" }, test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic(Rules.MemberSorting.Rule).WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY] = "field, public, private" }, test, expected, fixtest);
         }
 
         [TestMethod]
@@ -215,8 +215,8 @@ namespace CSharpMajordomo.Test
                 }
                 """;
 
-            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "field, private, readonly" }, test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic(Rules.MemberSorting.Rule).WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY] = "field, private, readonly" }, test, expected, fixtest);
         }
 
         [TestMethod]
@@ -248,8 +248,8 @@ namespace CSharpMajordomo.Test
                 }
                 """;
 
-            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "field, method, static" }, test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic(Rules.MemberSorting.Rule).WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY] = "field, method, static" }, test, expected, fixtest);
         }
 
         [TestMethod]
@@ -277,8 +277,8 @@ namespace CSharpMajordomo.Test
                 }
                 """;
 
-            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "field, static, readonly" }, test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic(Rules.MemberSorting.Rule).WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY] = "field, static, readonly" }, test, expected, fixtest);
         }
 
         [TestMethod]
@@ -308,8 +308,8 @@ namespace CSharpMajordomo.Test
                 }
                 """;
 
-            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "identifier" }, test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic(Rules.MemberSorting.Rule).WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY] = "identifier" }, test, expected, fixtest);
         }
 
         [TestMethod]
@@ -339,8 +339,8 @@ namespace CSharpMajordomo.Test
                 }
                 """;
 
-            var expected = VerifyCS.Diagnostic("CSharpMajordomo").WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(new() { [CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY] = "-identifier" }, test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic(Rules.MemberSorting.Rule).WithLocation(0);
+            await VerifyCS.VerifyCodeFixAsync(new() { [Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY] = "-identifier" }, test, expected, fixtest);
         }
     }
 }

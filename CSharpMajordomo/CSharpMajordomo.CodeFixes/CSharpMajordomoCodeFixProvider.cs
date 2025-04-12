@@ -13,6 +13,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,10 +25,7 @@ namespace CSharpMajordomo
     {
         private static ConcurrentDictionary<string, Comparer<MemberSyntaxReference>> CACHED_CONFIG = new();
 
-        public sealed override ImmutableArray<string> FixableDiagnosticIds
-        {
-            get { return ImmutableArray.Create(CSharpMajordomoAnalyzer.DiagnosticId); }
-        }
+        public sealed override ImmutableArray<string> FixableDiagnosticIds { get; } = Rules.RuleIds.ToImmutableArray();
 
         public sealed override FixAllProvider GetFixAllProvider()
         {
@@ -46,28 +44,69 @@ namespace CSharpMajordomo
             foreach(var diagnostic in context.Diagnostics)
             {
                 var diagnosticSpan = diagnostic.Location.SourceSpan;
-                if(!diagnostic.Properties.TryGetValue(CSharpMajordomoAnalyzer.SORT_ORDERING_CONFIG_KEY, out var configOrder) || configOrder is null || configOrder.Length == 0)
+                if(diagnostic.Id == Rules.MemberSorting.DiagnosticId)
                 {
-                    continue;
-                }
+                    if(!diagnostic.Properties.TryGetValue(Rules.MemberSorting.SORT_ORDERING_CONFIG_KEY, out var configOrder) || configOrder is null || configOrder.Length == 0)
+                    {
+                        continue;
+                    }
 
-                // Find the type declaration identified by the diagnostic.
-                var containingType = root.FindToken(diagnosticSpan.Start).Parent?.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
-                if(containingType is null)
+                    // Find the type declaration identified by the diagnostic.
+                    var containingType = root.FindToken(diagnosticSpan.Start).Parent?.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
+                    if(containingType is null)
+                    {
+                        continue;
+                    }
+
+                    var sorter = CACHED_CONFIG.GetOrAdd(configOrder, configOrder => SyntaxSorters.ParseTokenPriority(configOrder).ToComparer());
+
+                    // Register a code action that will invoke the fix.
+                    context.RegisterCodeFix(
+                        CodeAction.Create(
+                            title: CodeFixResources.SortMembersCodeFixTitle,
+                            createChangedDocument: c => SortMembersAsync(context, containingType, sorter, c),
+                            equivalenceKey: nameof(CodeFixResources.SortMembersCodeFixTitle)),
+                        diagnostic);
+                }
+                else if(diagnostic.Id == Rules.InterGroupSpacing.DiagnosticId || diagnostic.Id == Rules.IntraGroupSpacing.DiagnosticId)
                 {
-                    continue;
+                    if(!diagnostic.Properties.TryGetValue(SpacingDiagnosticHelper.SIMPLIFIED_SPACING_PROPERTY, out var lineCountInteger) || lineCountInteger is null || !int.TryParse(lineCountInteger, out var lines))
+                    {
+                        continue;
+                    }
+
+                    // Find the declaration identified by the diagnostic.
+                    var declarationNode = root.FindToken(diagnosticSpan.Start).Parent;
+                    if(declarationNode is null)
+                    {
+                        continue;
+                    }
+
+                    var previous = declarationNode.PreviousSibling();
+                    if(previous is null)
+                    {
+                        continue;
+                    }
+
+                    // Register a code action that will invoke the fix.
+                    context.RegisterCodeFix(
+                        CodeAction.Create(
+                            title: CodeFixResources.GroupSpacingCodeFixTitle,
+                            createChangedDocument: c => AdjustBlankLines(context, previous, declarationNode, lines, c),
+                            equivalenceKey: nameof(CodeFixResources.GroupSpacingCodeFixTitle)),
+                        diagnostic);
                 }
-
-                var sorter = CACHED_CONFIG.GetOrAdd(configOrder, configOrder => SyntaxSorters.ParseTokenPriority(configOrder).ToComparer());
-
-                // Register a code action that will invoke the fix.
-                context.RegisterCodeFix(
-                    CodeAction.Create(
-                        title: CodeFixResources.CodeFixTitle,
-                        createChangedDocument: c => SortMembersAsync(context, containingType, sorter, c),
-                        equivalenceKey: nameof(CodeFixResources.CodeFixTitle)),
-                    diagnostic);
             }
+        }
+
+        private async Task<Document> AdjustBlankLines(CodeFixContext context, SyntaxNode previous, SyntaxNode declarationNode, int lines, CancellationToken c)
+        {
+            var document = context.Document;
+
+            var interNodeSpan = await SyntaxWhitespace.CreateInterNodeTextSpanAsync(previous, declarationNode, c).ConfigureAwait(false);
+            
+            document = document.WithText(interNodeSpan.EditToHaveBlankLines(lines, "\r\n", c));
+            return document;
         }
 
         private async Task<Document> SortMembersAsync(

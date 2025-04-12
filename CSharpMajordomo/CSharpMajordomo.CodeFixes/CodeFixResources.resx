@@ -117,8 +117,11 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CodeFixTitle" xml:space="preserve">
+  <data name="SortMembersCodeFixTitle" xml:space="preserve">
     <value>Sort members</value>
     <comment>The title of the code fix.</comment>
+  </data>
+  <data name="GroupSpacingCodeFixTitle" xml:space="preserve">
+    <value>Add/remove blank lines</value>
   </data>
 </root>

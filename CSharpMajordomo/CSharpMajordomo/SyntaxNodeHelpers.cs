@@ -14,6 +14,9 @@ public static class SyntaxNodeHelpers
             ConstructorDeclarationSyntax c => "constructor",
             DestructorDeclarationSyntax d => "destructor",
             MethodDeclarationSyntax m => UnnamedHandler(m.Identifier.Text, "method"),
+            IndexerDeclarationSyntax i => "indexer", // could include parameters
+            OperatorDeclarationSyntax o => UnnamedHandler(o.NextTokenAfterOperatorKeyword()?.ToString() ?? o.FirstIdentifierChild()?.Identifier.Text, "operator"),
+            ConversionOperatorDeclarationSyntax c => UnnamedHandler(c.NextTokenAfterOperatorKeyword()?.ToString() ?? c.FirstIdentifierChild()?.Identifier.Text, "conversion"),
             EventFieldDeclarationSyntax e => UnnamedHandler(IdentifierName(e.Declaration), "event"),
             EventDeclarationSyntax e => UnnamedHandler(e.Identifier.Text, "event"),
             EnumDeclarationSyntax e => UnnamedHandler(e.Identifier.Text, "enum"),
@@ -25,15 +28,15 @@ public static class SyntaxNodeHelpers
             _ => $"Unknown declaration on line: {node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}",
         };
 
-        string UnnamedHandler(string id, string typeName)
+        string UnnamedHandler(string? id, string typeName)
         {
-            return id.Length > 0
+            return id?.Length > 0
                 ? id
                 : $"{typeName} on line: {node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
         }
     }
 
-    public static Location? IdentifierLocation(this SyntaxNode node)
+    public static Location? IdentifierLocation(this SyntaxNode? node)
     {
         return node switch
         {
@@ -43,6 +46,9 @@ public static class SyntaxNodeHelpers
             ConstructorDeclarationSyntax c => c.Identifier.GetLocation(),
             DestructorDeclarationSyntax d => d.Identifier.GetLocation(),
             MethodDeclarationSyntax m => m.Identifier.GetLocation(),
+            IndexerDeclarationSyntax i => i.ThisKeyword.GetLocation(),
+            OperatorDeclarationSyntax o => o.NextTokenAfterOperatorKeyword()?.GetLocation() ?? IdentifierLocation(o.FirstIdentifierChild()) ?? o.OperatorKeyword.GetLocation(),
+            ConversionOperatorDeclarationSyntax c => c.NextTokenAfterOperatorKeyword()?.GetLocation() ?? IdentifierLocation(c.FirstIdentifierChild()) ?? c.OperatorKeyword.GetLocation(),
             EventFieldDeclarationSyntax e => e.Declaration.GetLocation(),
             EventDeclarationSyntax e => e.Identifier.GetLocation(),
             EnumDeclarationSyntax e => e.Identifier.GetLocation(),
@@ -51,7 +57,35 @@ public static class SyntaxNodeHelpers
             RecordDeclarationSyntax r => r.Identifier.GetLocation(),
             StructDeclarationSyntax s => s.Identifier.GetLocation(),
             VariableDeclarationSyntax v => v.Variables.Select(v => v.Identifier.GetLocation()).FirstOrDefault(),
+            IdentifierNameSyntax i => i.Identifier.GetLocation(),
             _ => null,
         };
+    }
+
+    public static IdentifierNameSyntax? FirstIdentifierChild(this SyntaxNode node)
+    {
+        return node.ChildNodes().OfType<IdentifierNameSyntax>().FirstOrDefault();
+    }
+
+    public static SyntaxNodeOrToken? NextTokenAfterOperatorKeyword(this SyntaxNode node)
+    {
+        return node.ChildNodesAndTokens().SkipWhile(s => !s.IsToken || !s.AsToken().IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.OperatorKeyword)).Skip(1).FirstOrDefault();
+    }
+
+    public static SyntaxNode? PreviousSibling(this SyntaxNode node)
+    {
+        if(node.FullSpan.Start <= 0)
+        {
+            return null;
+        }
+
+        var previous = node.Parent?.FindNode(new(node.FullSpan.Start - 1, 1));
+        var n = previous;
+        while(n is not null && n.Parent != node.Parent)
+        {
+            n = n.Parent;
+        }
+
+        return n;
     }
 }

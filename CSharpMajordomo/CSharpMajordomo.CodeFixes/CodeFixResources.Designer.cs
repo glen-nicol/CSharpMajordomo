@@ -61,11 +61,20 @@ namespace CSharpMajordomo {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Add/remove blank lines.
+        /// </summary>
+        internal static string GroupSpacingCodeFixTitle {
+            get {
+                return ResourceManager.GetString("GroupSpacingCodeFixTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Sort members.
         /// </summary>
-        internal static string CodeFixTitle {
+        internal static string SortMembersCodeFixTitle {
             get {
-                return ResourceManager.GetString("CodeFixTitle", resourceCulture);
+                return ResourceManager.GetString("SortMembersCodeFixTitle", resourceCulture);
             }
         }
     }

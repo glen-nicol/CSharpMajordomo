@@ -122,11 +122,29 @@
     <comment>An optional longer localizable description of the diagnostic.</comment>
   </data>
   <data name="AnalyzerMessageFormat" xml:space="preserve">
-    <value>Reorder members according to editorconfig specifications.</value>
+    <value>Reorder members according to editorconfig specifications</value>
     <comment>The format-able message the diagnostic displays.</comment>
   </data>
   <data name="AnalyzerTitle" xml:space="preserve">
     <value>Incorrect type member ordering</value>
     <comment>The title of the diagnostic.</comment>
+  </data>
+  <data name="InterGroupSpacingTitle" xml:space="preserve">
+    <value>Space out declarations of different types</value>
+  </data>
+  <data name="InterGroupSpacingDescription" xml:space="preserve">
+    <value>Space out declarations of different types.</value>
+  </data>
+  <data name="InterGroupSpacingMessageFormat" xml:space="preserve">
+    <value>Use {0} blank line(s) between different member types</value>
+  </data>
+  <data name="IntraGroupSpacingDescription" xml:space="preserve">
+    <value>Space out declarations of the same type.</value>
+  </data>
+  <data name="IntraGroupSpacingMessageFormat" xml:space="preserve">
+    <value>Use {0} blank line(s) between {1} members</value>
+  </data>
+  <data name="IntraGroupSpacingTitle" xml:space="preserve">
+    <value>Space out declarations of the same type</value>
   </data>
 </root>
