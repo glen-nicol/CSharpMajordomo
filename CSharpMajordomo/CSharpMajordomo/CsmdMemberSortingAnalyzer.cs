@@ -26,12 +26,12 @@ public class CsmdMemberSortingAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
 
         context.RegisterSyntaxNodeAction(
-            c => AnalyzeNode(c, c.Options.AnalyzerConfigOptionsProvider), 
-            SyntaxKind.ClassDeclaration, 
+            c => AnalyzeNode(c, c.Options.AnalyzerConfigOptionsProvider),
+            SyntaxKind.ClassDeclaration,
             SyntaxKind.RecordDeclaration,
             SyntaxKind.StructDeclaration,
-            SyntaxKind.InterfaceDeclaration, 
-            SyntaxKind.EventDeclaration, 
+            SyntaxKind.InterfaceDeclaration,
+            SyntaxKind.EventDeclaration,
             SyntaxKind.EventFieldDeclaration);
     }
 
