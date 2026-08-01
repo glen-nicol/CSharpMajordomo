@@ -13,7 +13,7 @@ namespace CSharpMajordomo.Test
     [TestClass]
     public class SpacingConfigParsingTests
     {
-        [DataTestMethod]
+        [TestMethod]
         [DynamicData(nameof(MemberDeclarations))]
         public void single_positive_integer_config_specifies_for_all_types(string declarationSyntax)
         {
@@ -24,7 +24,7 @@ namespace CSharpMajordomo.Test
             result.Should().Be(2);
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DynamicData(nameof(MemberDeclarations))]
         public void Empty_config_uses_default_spacing(string declarationSyntax)
         {
@@ -59,7 +59,7 @@ namespace CSharpMajordomo.Test
             propertyResult.Should().Be(1); // default value
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DynamicData(nameof(MemberDeclarations))]
         public void Any_non_integer_disables_spacing_config(string declarationSyntax)
         {
@@ -71,7 +71,7 @@ namespace CSharpMajordomo.Test
         }
 
 
-        [DataTestMethod]
+        [TestMethod]
         [DynamicData(nameof(FieldAndPropertyConfigInputs))]
         public void Can_specify_mulitple_spacings_by_node_type(string configSyntax)
         {
@@ -108,7 +108,7 @@ namespace CSharpMajordomo.Test
                 yield return ["(field:0), property:0"];
                 yield return ["(field:0),property:0"];
                 yield return ["(field:0),(property:0)"];
-                
+
             }
         }
     }
