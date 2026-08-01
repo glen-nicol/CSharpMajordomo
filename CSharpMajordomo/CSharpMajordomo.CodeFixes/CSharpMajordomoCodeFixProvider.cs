@@ -104,15 +104,55 @@ namespace CSharpMajordomo
             var document = context.Document;
 
             var interNodeSpan = await SyntaxWhitespace.CreateInterNodeTextSpanAsync(previous, declarationNode, c).ConfigureAwait(false);
-            
-            document = document.WithText(interNodeSpan.EditToHaveBlankLines(lines, "\r\n", c));
+
+            var lineEnding = await GetFileLineEndingAsync(context, c).ConfigureAwait(false);
+            document = document.WithText(interNodeSpan.EditToHaveBlankLines(lines, lineEnding, c));
             return document;
         }
 
+        private async Task<string> GetFileLineEndingAsync(CodeFixContext context, CancellationToken cancellationToken)
+        {
+            // Try to get line ending from document options first
+            var documentOptions = await context.Document.GetOptionsAsync(cancellationToken).ConfigureAwait(false);
+            var lineEnding = documentOptions.GetOption(FormattingOptions.NewLine);
+
+            // If not set in options, detect from actual file content
+            if (string.IsNullOrEmpty(lineEnding))
+            {
+                var sourceText = await context.Document.GetTextAsync(cancellationToken).ConfigureAwait(false);
+                lineEnding = DetectLineEndingFromText(sourceText);
+            }
+
+            return lineEnding;
+        }
+
+        private static string DetectLineEndingFromText(SourceText sourceText)
+        {
+            // Scan the text to find the first line ending sequence
+            for (int i = 0; i < sourceText.Length - 1; i++)
+            {
+                if (sourceText[i] == '\r' && i + 1 < sourceText.Length && sourceText[i + 1] == '\n')
+                {
+                    return "\r\n";
+                }
+                else if (sourceText[i] == '\r')
+                {
+                    return "\r";
+                }
+                else if (sourceText[i] == '\n')
+                {
+                    return "\n";
+                }
+            }
+
+            // Default to platform line ending if none found
+            return Environment.NewLine;
+        }
+
         private async Task<Document> SortMembersAsync(
-            CodeFixContext context,  
+            CodeFixContext context,
             TypeDeclarationSyntax typeDecl,
-            Comparer<MemberSyntaxReference> sorter, 
+            Comparer<MemberSyntaxReference> sorter,
             CancellationToken cancellationToken)
         {
             var document = context.Document;
@@ -137,4 +177,6 @@ namespace CSharpMajordomo
             //return await Formatter.FormatAsync(editor.GetChangedDocument(), cancellationToken: context.CancellationToken);
         }
     }
+
+
 }
