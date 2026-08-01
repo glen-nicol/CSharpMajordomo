@@ -13,6 +13,31 @@ namespace CSharpMajordomo.Test
     [TestClass]
     public class SpacingConfigParsingTests
     {
+        private static IEnumerable<object[]> MemberDeclarations
+        {
+            get
+            {
+                yield return ["int fieldName;"];
+                yield return ["int PropertyName { get; }"];
+                yield return ["void MethodName(){}"];
+            }
+        }
+
+        private static IEnumerable<object[]> FieldAndPropertyConfigInputs
+        {
+            get
+            {
+                yield return ["field:0, property:0"];
+                yield return ["field:0,property:0"];
+                yield return ["field:0,property:0  "];
+                yield return [" field:0,property:0  "];
+                yield return ["(field:0), property:0"];
+                yield return ["(field:0),property:0"];
+                yield return ["(field:0),(property:0)"];
+
+            }
+        }
+
         [TestMethod]
         [DynamicData(nameof(MemberDeclarations))]
         public void single_positive_integer_config_specifies_for_all_types(string declarationSyntax)
@@ -70,7 +95,6 @@ namespace CSharpMajordomo.Test
             result.Should().Be(null);
         }
 
-
         [TestMethod]
         [DynamicData(nameof(FieldAndPropertyConfigInputs))]
         public void Can_specify_mulitple_spacings_by_node_type(string configSyntax)
@@ -84,32 +108,6 @@ namespace CSharpMajordomo.Test
             fieldResult.Should().Be(0);
             propertyResult.Should().Be(0);
             methodResult.Should().Be(1);
-        }
-
-
-        private static IEnumerable<object[]> MemberDeclarations
-        {
-            get
-            {
-                yield return ["int fieldName;"];
-                yield return ["int PropertyName { get; }"];
-                yield return ["void MethodName(){}"];
-            }
-        }
-
-        private static IEnumerable<object[]> FieldAndPropertyConfigInputs
-        {
-            get
-            {
-                yield return ["field:0, property:0"];
-                yield return ["field:0,property:0"];
-                yield return ["field:0,property:0  "];
-                yield return [" field:0,property:0  "];
-                yield return ["(field:0), property:0"];
-                yield return ["(field:0),property:0"];
-                yield return ["(field:0),(property:0)"];
-
-            }
         }
     }
 }

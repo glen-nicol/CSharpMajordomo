@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.11.35327.3
+# Visual Studio Version 18
+VisualStudioVersion = 18.8.12023.21 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpMajordomo", "CSharpMajordomo\CSharpMajordomo\CSharpMajordomo.csproj", "{EB44F955-7EDC-4D78-AE86-4A881F232B34}"
 EndProject
@@ -12,6 +12,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpMajordomo.Test", "CSharpMajordomo\CSharpMajordomo.Test\CSharpMajordomo.Test.csproj", "{5DECC911-8733-4187-8B63-6E57DBC3DAE6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpMajordomo.Vsix", "CSharpMajordomo\CSharpMajordomo.Vsix\CSharpMajordomo.Vsix.csproj", "{32175BE3-5AC8-43C1-8833-F5DE7DE3F3C7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8C2D1E03-E428-4C71-BB7F-6928F0B2B28C}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
