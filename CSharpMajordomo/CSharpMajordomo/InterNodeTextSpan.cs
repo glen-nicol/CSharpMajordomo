@@ -38,9 +38,9 @@ public readonly struct InterNodeTextSpan(SourceText text, int firstNodeSpanEnd, 
         // detect empty string and it does not count as a blank line
         var (text, lineOfPreviousEnd, lineOfCurrentStart) = (Text, LineOfFirstEnd, LineOfSecondStart);
         var lines = text.Lines;
-        var maxStartSpanStart = 
-            lineOfCurrentStart == lineOfPreviousEnd 
-            ? FirstNodeSpanEnd 
+        var maxStartSpanStart =
+            lineOfCurrentStart == lineOfPreviousEnd
+            ? FirstNodeSpanEnd
             : lines[lineOfCurrentStart].Start;
         if (lineOfCurrentStart - lineOfPreviousEnd <= 1)
         {
