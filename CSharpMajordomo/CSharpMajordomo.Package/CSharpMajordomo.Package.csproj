@@ -7,7 +7,6 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
-
   <PropertyGroup>
     <PackageId>CSharpMajordomo.Analyzer</PackageId>
     <PackageVersion>0.1.0.0-alpha</PackageVersion>
@@ -22,7 +21,12 @@
     <Copyright>Copyright 2026</Copyright>
     <PackageTags>C#, analyzers, code quality, Style</PackageTags>
     <DevelopmentDependency>true</DevelopmentDependency>
-    <NoPackageAnalysis>true</NoPackageAnalysis>
+
+    <!-- Instructs the build to store symbols inside the main DLL because analyzers don't have good support for snupkg. Get NU5017: Cannot create a package that has no dependencies nor content. -->
+    <DebugType>embedded</DebugType>
+
+    <!-- Disables the creation of a separate .snupkg file to bypass NU5017 -->
+    <IncludeSymbols>false</IncludeSymbols>
 
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToOutput</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
