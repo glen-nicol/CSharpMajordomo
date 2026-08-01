@@ -7,9 +7,9 @@
     <!-- I cannot figure out how to set this up so that it is used for all projects except the packaging one.
          Even when I put it in all the others it still gets picked up as a transitive dependency during restore.
          So It needs to be disabled during release and then brought back. -->
-    <PackageReference Include="CSharpMajordomo.Analyzer" Version="0.1.0-alpha">
+    <<!--PackageReference Include="CSharpMajordomo.Analyzer" Version="0.1.0-alpha">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
+    </PackageReference>-->
   </ItemGroup>
 </Project>
