@@ -24,7 +24,7 @@ public static class SyntaxSorters
             {
                 var v = memberSyntaxReference.SortableTokens.BinarySearch(searchFor);
 
-                // sort is ASC which means first items need a lower value. 
+                // sort is ASC which means first items need a lower value.
                 return v >= 0 ? 1 : 2;
             }
         };
@@ -51,7 +51,7 @@ public static class SyntaxSorters
 
     public static Comparison<MemberSyntaxReference> ParseTokenPriority(string configuration)
     {
-        var comparisonLayers = 
+        var comparisonLayers =
             configuration.Split(new[] { ",", ";", " " }, StringSplitOptions.RemoveEmptyEntries)
             .Select(sortField =>
             {
